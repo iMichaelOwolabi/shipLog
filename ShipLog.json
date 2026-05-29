@@ -1,0 +1,692 @@
+{
+  "name": "ShipLog",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "owner": {
+          "__rl": true,
+          "value": "iMichaelOwolabi",
+          "mode": "list",
+          "cachedResultName": "iMichaelOwolabi",
+          "cachedResultUrl": "https://github.com/iMichaelOwolabi"
+        },
+        "repository": {
+          "__rl": true,
+          "value": "text-redactor",
+          "mode": "list",
+          "cachedResultName": "text-redactor",
+          "cachedResultUrl": "https://github.com/iMichaelOwolabi/text-redactor"
+        },
+        "events": [
+          "release"
+        ],
+        "options": {}
+      },
+      "type": "n8n-nodes-base.githubTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1088,
+        -384
+      ],
+      "id": "14c3dad1-545e-4793-ab4c-fe0b95c24a93",
+      "name": "Github Release Trigger",
+      "webhookId": "f287d02e-6e8f-4ba0-af4c-4719df726cd4",
+      "executeOnce": false,
+      "retryOnFail": false,
+      "maxTries": 2,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "githubOAuth2Api": {
+          "id": "xLKe8A2lEFT5m6JC",
+          "name": "GitHub account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Here are the merged PRs for release {{ $('Github Release Trigger').item.json.body.release.tag_name }}\n\n{{ JSON.stringify($json.data) }}\n\nWrite the release notes for both audiences as instructed.",
+        "options": {
+          "systemMessage": "You receive a list of merged PRs for a new release. \n\nProduce TWO outputs, labeled exactly as shown:\n\nDEV:\nGrouped by: 🚀 Features · 🐛 Bug fixes · 🔧 Maintenance\nOne line per PR: • [Jira ticket if found] PR title — @author\nLead with release tag and date.\n\nSTAKEHOLDER:\n2–4 plain English sentences. No ticket IDs, no PR titles, \nno code terms. Focus on what changed for users and why it \nmatters. Written as a product announcement, not a technical \nlog. Make sure to always add the release tag or number"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        720,
+        -464
+      ],
+      "id": "9c77f02e-766c-4a97-bea4-50a372ba3bc8",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/repos/iMichaelOwolabi/text-redactor/pulls",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "state",
+              "value": "closed"
+            },
+            {
+              "name": "base",
+              "value": "main"
+            },
+            {
+              "name": "per_page",
+              "value": "30"
+            },
+            {
+              "name": "direction",
+              "value": "desc"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -64,
+        -432
+      ],
+      "id": "9f288e2c-89fd-4fff-b3e2-a1a5fe3d2d78",
+      "name": "Get last 30 PRs from the Repo",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "y1Yw3OnhQAxxEwnn",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ef92bc12-5100-44ee-abbc-278228b182db",
+              "name": "published_at",
+              "value": "={{ $json.published_at }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -464,
+        -432
+      ],
+      "id": "c1505bf8-f388-4803-8c3f-ed5a4cdd3629",
+      "name": "Format Response"
+    },
+    {
+      "parameters": {
+        "jsCode": "// return an item in a particular index of the array\nconst items = $input.all();\nreturn items[1];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -272,
+        -432
+      ],
+      "id": "26af65c6-32e5-47cd-bd4d-b3aa32a1d8c2",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4d385739-0dc3-4cc0-a5b4-d2a36e020f2f",
+              "leftValue": "={{ $json.merged_at }}",
+              "rightValue": "={{ $('Code in JavaScript').first().json.published_at }}",
+              "operator": {
+                "type": "dateTime",
+                "operation": "after"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        144,
+        -432
+      ],
+      "id": "427a5fae-9e9a-47b5-8515-a6ce3011b4e3",
+      "name": "Filter",
+      "notesInFlow": true,
+      "notes": "All the PRs from the previous release."
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        528,
+        -448
+      ],
+      "id": "87a4398c-e440-488a-b1f3-f3d79724a261",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        656,
+        -240
+      ],
+      "id": "58d1e23f-78e9-429f-88f3-99b06ace75cb",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "r8cs62039Ibq0MW4",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B6NPMGB1B",
+          "mode": "list",
+          "cachedResultName": "releases"
+        },
+        "text": "={{ $json.output.split('STAKEHOLDER:')[0].replace('DEV:', '').trim() }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1312,
+        -656
+      ],
+      "id": "a1105b4a-53f4-4da3-ad9c-c9ca45668e83",
+      "name": "Notify Dev",
+      "webhookId": "562538dd-673b-498d-a41f-02564222fe7e",
+      "retryOnFail": false,
+      "executeOnce": true,
+      "maxTries": 2,
+      "credentials": {
+        "slackApi": {
+          "id": "TxBwj0ZvR4gh1SUZ",
+          "name": "Slack account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Could not post release update to the dev Slack channel"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B6VPEPNKE",
+          "mode": "list",
+          "cachedResultName": "product-updates"
+        },
+        "text": "={{ $json.output.split('STAKEHOLDER:')[1].trim() }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1312,
+        -464
+      ],
+      "id": "007581a5-9b29-4195-876c-7971dfe3a6d3",
+      "name": "Send Realease Note to General",
+      "webhookId": "526d904a-1af8-4d93-a68b-952b5eca8c3c",
+      "retryOnFail": false,
+      "executeOnce": true,
+      "credentials": {
+        "slackApi": {
+          "id": "TxBwj0ZvR4gh1SUZ",
+          "name": "Slack account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Could not post release update to the Stakeholder Slack channel"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "1ffba309-eb87-4592-8973-ec60a1fec014",
+          "mode": "list",
+          "cachedResultName": "Ship Log - Dev",
+          "cachedResultUrl": "https://www.notion.so/1ffba309eb8745928973ec60a1fec014"
+        },
+        "title": "=Release {{ $('Github Release Trigger').item.json.body.release.tag_name }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Date|date",
+              "date": "={{ $now.toISO() }}"
+            },
+            {
+              "key": "Release Tag|rich_text",
+              "textContent": "={{ $('Github Release Trigger').item.json.body.release.tag_name }}"
+            },
+            {
+              "key": "PRs Merged|number",
+              "numberValue": "={{ $('Aggregate').first().json.data.length }}"
+            },
+            {
+              "key": "Notes|rich_text",
+              "textContent": "={{ $json.output.split('STAKEHOLDER:')[0].replace('DEV:', '').trim() }}"
+            },
+            {
+              "key": "Name|title",
+              "title": "=Release {{ $('Github Release Trigger').item.json.body.release.tag_name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1312,
+        -256
+      ],
+      "id": "c4f3e8cf-3fe5-4314-92f7-63eaebc9533c",
+      "name": "Update the dev release log",
+      "retryOnFail": false,
+      "executeOnce": true,
+      "credentials": {
+        "notionApi": {
+          "id": "toYG6wpNq3c0rhU6",
+          "name": "Notion account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Could not post release update to the dev Notion Database"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "6bd7c13d-e2a4-4a4e-b9ad-8f070d4d89af",
+          "mode": "list",
+          "cachedResultName": "Ship Log - General",
+          "cachedResultUrl": "https://www.notion.so/6bd7c13de2a44a4eb9ad8f070d4d89af"
+        },
+        "title": "=Release {{ $('Github Release Trigger').item.json.body.release.tag_name }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Date|date",
+              "date": "={{ $now.toISO() }}"
+            },
+            {
+              "key": "Release Tag|rich_text",
+              "textContent": "={{ $('Github Release Trigger').item.json.body.release.tag_name }}"
+            },
+            {
+              "key": "Notes|rich_text",
+              "textContent": "={{ $json.output.split('STAKEHOLDER:')[1].trim() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1312,
+        -64
+      ],
+      "id": "6fddb061-5992-4628-8c5c-06b1e9370866",
+      "name": "Update general release log",
+      "retryOnFail": false,
+      "executeOnce": true,
+      "maxTries": 2,
+      "credentials": {
+        "notionApi": {
+          "id": "toYG6wpNq3c0rhU6",
+          "name": "Notion account"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "notes": "Could not post release update to the General Notion Database"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3f10f6a5-7213-40eb-b6ed-27da231cff9c",
+              "leftValue": "={{ $json.body.release.target_commitish }}",
+              "rightValue": "main",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "5e5cfce7-707a-48ad-9f1c-f90012b98f86",
+              "leftValue": "={{ $json.body.release.draft }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "33ee4381-a9a4-4890-98f8-ad1f13ef5471",
+              "leftValue": "={{ $json.body.action }}",
+              "rightValue": "published",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -896,
+        -400
+      ],
+      "id": "18eb876d-d823-4b61-b528-437c09a805de",
+      "name": "Actual release?"
+    },
+    {
+      "parameters": {
+        "url": "https://api.github.com/repos/iMichaelOwolabi/text-redactor/releases",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "per_page",
+              "value": "2"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -672,
+        -432
+      ],
+      "id": "0c31a9d4-5119-4a86-9f5f-a2227179e911",
+      "name": "Get last 2 Releases",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "y1Yw3OnhQAxxEwnn",
+          "name": "Bearer Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7149854d-3ca7-4d34-a1c0-f4672ae72b85",
+              "leftValue": "={{ $input.all().length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        320,
+        -432
+      ],
+      "id": "366aae89-ac5c-4aa7-bbf7-8a8f095e5771",
+      "name": "If any"
+    },
+    {
+      "parameters": {
+        "jsCode": "const output = $input.first().json.output;\n\nif (!output.includes('DEV:') || !output.includes('STAKEHOLDER:')) {\n  throw new Error('ShipLog: AI Agent output missing expected DEV or STAKEHOLDER sections');\n}\n\nreturn [$input.first()];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1072,
+        -464
+      ],
+      "id": "d80d8025-df64-482a-8408-e8a63b28c59c",
+      "name": "validate AI Agent output"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Github Release Trigger": {
+      "main": [
+        [
+          {
+            "node": "Actual release?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get last 30 PRs from the Repo": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Response": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Get last 30 PRs from the Repo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "If any",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "validate AI Agent output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Dev": {
+      "main": [
+        []
+      ]
+    },
+    "Send Realease Note to General": {
+      "main": [
+        []
+      ]
+    },
+    "Actual release?": {
+      "main": [
+        [
+          {
+            "node": "Get last 2 Releases",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get last 2 Releases": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If any": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "validate AI Agent output": {
+      "main": [
+        [
+          {
+            "node": "Notify Dev",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Realease Note to General",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update the dev release log",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update general release log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": 55,
+    "availableInMCP": false,
+    "errorWorkflow": "4Druroo8eDHvimNa"
+  },
+  "versionId": "e2ad017a-2ba7-4083-9c66-6b59a416cba9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "718d888ed3a6364990ed50460775fa0b431b5aebb2fbcebb96713a101eb1ab76"
+  },
+  "id": "ExTRUiaNAh6CoUb2",
+  "tags": []
+}

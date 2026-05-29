@@ -1,0 +1,73 @@
+{
+  "name": "ShipLog - Error Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "8ddf96ba-254e-4d11-b64d-6d3f10c5e68a",
+      "name": "Error Trigger"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0B7T253HCG",
+          "mode": "list",
+          "cachedResultName": "error-alerts"
+        },
+        "text": "=🚨 *ShipLog failed*\n\n*Workflow:* {{ $json.workflow.name }}\n*Failed node:* {{ $json.node.name }}\n*Error:* {{ $json.error.message }}\n*Execution:* {{ $json.execution.url }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        208,
+        0
+      ],
+      "id": "91ddd346-4b5b-4bba-8490-a7a2926b9afb",
+      "name": "Send a message",
+      "webhookId": "c01fef38-dda7-4246-b2b8-61f58bc50a96",
+      "credentials": {
+        "slackApi": {
+          "id": "TxBwj0ZvR4gh1SUZ",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "any",
+    "availableInMCP": false
+  },
+  "versionId": "760fb0dd-3ee7-4ee7-af1d-39eef8eb0735",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "718d888ed3a6364990ed50460775fa0b431b5aebb2fbcebb96713a101eb1ab76"
+  },
+  "id": "4Druroo8eDHvimNa",
+  "tags": []
+}
