@@ -39,3 +39,6 @@ ShipLog is fully built and operational. Known items on the backlog:
 * Eliminates the risk of stakeholders being uninformed after a deploy
 * Creates a searchable, permanent release history in Notion automatically
 * Scales with release frequency at zero additional effort
+
+<img width="1367" height="411" alt="Screenshot 2026-05-29 at 11 54 36" src="https://github.com/user-attachments/assets/489ca7ae-0794-4ebb-b1a3-d7ab863d543c" />
+
